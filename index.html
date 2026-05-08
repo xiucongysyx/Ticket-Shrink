@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电子发票无损重组工具 (极致收缩版)</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f5f5f5; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1 { text-align: center; margin-top: 0; color: #333; }
+        .controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef; }
+        .row { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; width: 100%; }
+        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: bold; transition: 0.2s; white-space: nowrap; }
+        .btn:hover { background: #0056b3; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .slider-group { display: flex; flex-direction: column; gap: 15px; flex-grow: 1; border-left: 3px solid #007bff; padding-left: 15px; }
+        .slider-container { display: flex; align-items: center; gap: 10px; width: 100%; }
+        .slider-container label { width: 180px; font-size: 14px; font-weight: 500; }
+        input[type="range"] { flex-grow: 1; }
+        .value-badge { background: #e9ecef; padding: 2px 8px; border-radius: 10px; font-size: 12px; color: #495057; min-width: 30px; text-align: center; font-weight: bold; }
+        select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; outline: none; }
+        .preview-area { display: flex; gap: 20px; flex-wrap: wrap; }
+        .image-box { flex: 1; min-width: 300px; border: 2px dashed #ccc; padding: 10px; border-radius: 8px; text-align: center; background: #fafafa; }
+        .image-box img { max-width: 100%; height: auto; display: block; margin: 10px auto; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 4px; }
+        .status { text-align: center; color: #666; margin-bottom: 10px; height: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📄 发票无损重组工具 (极致收缩版)</h1>
+    
+    <div class="controls">
+        <div class="row">
+            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+            <button class="btn" onclick="document.getElementById('fileInput').click()">1. 选择发票图片</button>
+            
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label for="ratioSelect" style="font-weight: 500;">输出比例:</label>
+                <select id="ratioSelect" disabled>
+                    <option value="card">补底色至标准卡片 (8.56 : 5.4)</option>
+                    <option value="auto">无缝自适应 (不锁定比例)</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 10px; margin-left: 15px;">
+                <input type="checkbox" id="splitLineSwitch" style="width: 18px; height: 18px; margin: 0;"> <label for="splitLineSwitch" style="font-size: 14px; font-weight: 500; cursor: pointer;">保留蓝色分割线</label>
+            </div>
+
+            <button class="btn" id="processBtn" style="margin-left: auto;" disabled>2. 极致重排布局</button>
+        </div>
+
+        <div class="row" style="margin-top: 10px;">
+            <div class="slider-group">
+                <div class="slider-container">
+                    <label>主体纵向行距 (Y轴):</label>
+                    <input type="range" id="blankY" min="0" max="60" value="15" disabled>
+                    <span class="value-badge" id="valY">15</span>
+                </div>
+                <div class="slider-container">
+                    <label>主体横向间距 (X轴, <span style="color:green;">解锁收缩</span>):</label>
+                    <input type="range" id="blankTopX" min="0" max="60" value="15" disabled>
+                    <span class="value-badge" id="valTopX">15</span>
+                </div>
+                <div class="slider-container" style="margin-top: 5px; padding-top: 15px; border-top: 1px dashed #ccc;">
+                    <label style="color: #d93025;">⭐ 底部虚线框长度 (X轴):</label>
+                    <input type="range" id="blankBtmX" min="0" max="150" value="30" disabled>
+                    <span class="value-badge" id="valBtmX">30</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status" id="statusText">请选择图片 (极致重排已解锁，默认为移除分割线)</div>
+
+    <div class="preview-area">
+        <div class="image-box">
+            <h3>原图参考</h3>
+            <img id="originalImg" style="display: none;">
+        </div>
+        <div class="image-box">
+            <h3>完美极致版 (右键另存为)</h3>
+            <img id="resultImg" style="display: none;">
+        </div>
+    </div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const originalImg = document.getElementById('originalImg');
+    const resultImg = document.getElementById('resultImg');
+    
+    const blankYSlider = document.getElementById('blankY');
+    const blankTopXSlider = document.getElementById('blankTopX');
+    const blankBtmXSlider = document.getElementById('blankBtmX');
+    
+    const valY = document.getElementById('valY');
+    const valTopX = document.getElementById('valTopX');
+    const valBtmX = document.getElementById('valBtmX');
+    
+    const ratioSelect = document.getElementById('ratioSelect');
+    const processBtn = document.getElementById('processBtn');
+    const statusText = document.getElementById('statusText');
+    
+    // ⭐ 获取开关引用
+    const splitLineSwitch = document.getElementById('splitLineSwitch');
+
+    let loadedImage = new Image();
+
+    // 更新数值显示
+    blankYSlider.addEventListener('input', (e) => valY.textContent = e.target.value);
+    blankTopXSlider.addEventListener('input', (e) => valTopX.textContent = e.target.value);
+    blankBtmXSlider.addEventListener('input', (e) => valBtmX.textContent = e.target.value);
+
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            loadedImage.src = event.target.result;
+            loadedImage.onload = () => {
+                originalImg.src = loadedImage.src;
+                originalImg.style.display = 'block';
+                [blankYSlider, blankTopXSlider, blankBtmXSlider, ratioSelect, processBtn, splitLineSwitch].forEach(el => el.disabled = false);
+                statusText.textContent = `加载成功! 拖动滑块即可实时重绘`;
+                processBtn.click();
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // ⭐ 为滑块、下拉菜单、以及开关添加事件，自动生成
+    [blankYSlider, blankTopXSlider, blankBtmXSlider, ratioSelect, splitLineSwitch].forEach(el => {
+        el.addEventListener('change', () => processBtn.click());
+    });
+
+    processBtn.addEventListener('click', () => {
+        if (!loadedImage.src) return;
+        statusText.style.color = '#333';
+        statusText.textContent = '极致收缩重组中...';
+        
+        setTimeout(() => {
+            const ySpace = parseInt(blankYSlider.value, 10);
+            const topXSpace = parseInt(blankTopXSlider.value, 10);
+            const btmXSpace = parseInt(blankBtmXSlider.value, 10);
+            const ratioType = ratioSelect.value;
+            const keepSplitLine = splitLineSwitch.checked; // ⭐ 获取开关状态
+            
+            const resultDataUrl = processUltimateRearrangement(loadedImage, ySpace, topXSpace, btmXSpace, ratioType, keepSplitLine);
+            resultImg.src = resultDataUrl;
+            resultImg.style.display = 'block';
+            statusText.style.color = '#0f9d58';
+            statusText.textContent = '✅ 生成完成！极致收缩已解锁，字形完美无损。';
+        }, 50);
+    });
+
+    // 边缘检测与切片拼贴辅助函数 (复用之前的逻辑)
+    function dropSlices(srcCanvas, axis, maxBlank, edgeThreshold) {
+        const w = srcCanvas.width, h = srcCanvas.height;
+        const ctx = srcCanvas.getContext('2d');
+        const imgData = ctx.getImageData(0, 0, w, h).data, edges = new Uint8Array(w * h);
+        for (let y = 0; y < h - 1; y++) {
+            for (let x = 0; x < w - 1; x++) {
+                const idx = (y * w + x) * 4;
+                const right = (y * w + (x + 1)) * 4;
+                const bottom = ((y + 1) * w + x) * 4;
+                const g = (imgData[idx]*0.299 + imgData[idx+1]*0.587 + imgData[idx+2]*0.114);
+                const gR = (imgData[right]*0.299 + imgData[right+1]*0.587 + imgData[right+2]*0.114);
+                const gB = (imgData[bottom]*0.299 + imgData[bottom+1]*0.587 + imgData[bottom+2]*0.114);
+                edges[y * w + x] = Math.abs(g - gR) + Math.abs(g - gB) > 15 ? 1 : 0;
+            }
+        }
+        const keep = []; let blankCount = 0;
+        const limit1 = axis === 'x' ? w : h, limit2 = axis === 'x' ? h : w;
+        for (let i = 0; i < limit1; i++) {
+            let edgeSum = 0;
+            for (let j = 0; j < limit2; j++) {
+                edgeSum += axis === 'x' ? edges[j * w + i] : edges[i * w + j];
+            }
+            if (edgeSum > edgeThreshold) { keep.push(i); blankCount = 0; }
+            else { if (blankCount < maxBlank) { keep.push(i); blankCount++; } }
+        }
+        if (keep.length === 0) return srcCanvas;
+        const destCanvas = document.createElement('canvas');
+        if (axis === 'x') { destCanvas.width = keep.length; destCanvas.height = h; }
+        else { destCanvas.width = w; destCanvas.height = keep.length; }
+        const destCtx = destCanvas.getContext('2d');
+        let destPos = 0, start = keep[0], current = keep[0];
+        for(let i = 1; i <= keep.length; i++) {
+            if (i < keep.length && keep[i] === current + 1) { current = keep[i]; }
+            else {
+                let segLen = current - start + 1;
+                if (axis === 'x') { destCtx.drawImage(srcCanvas, start, 0, segLen, h, destPos, 0, segLen, h); }
+                else { destCtx.drawImage(srcCanvas, 0, start, w, segLen, 0, destPos, w, segLen); }
+                destPos += segLen;
+                if (i < keep.length) { start = keep[i]; current = keep[i]; }
+            }
+        }
+        return destCanvas;
+    }
+
+    // ⭐ 终极极致重排核心算法
+    function processUltimateRearrangement(img, ySpace, topXSpace, btmXSpace, ratioType, keepSplitLine) {
+        const w = img.width, h = img.height;
+        
+        // 分割线判定区域：发票核心文字下方、底部虚线框上方。
+        // 这个蓝色线条区域大概在原图高度的 72% - 74% 之间。
+        const splitLineTopY = Math.floor(h * 0.72); 
+        const splitLineBottomY = Math.floor(h * 0.74); 
+
+        // ⭐ 逻辑实现：切割位置与开关状态挂钩
+        let topH, btmH, btmSrcY;
+        
+        if (keepSplitLine) {
+            // 开：保留线条。切割点在蓝色线条**下方**。上半部包含线条。
+            topH = splitLineBottomY;
+            btmSrcY = splitLineBottomY;
+            btmH = h - splitLineBottomY;
+        } else {
+            // 关（默认）：移除线条。切割点在蓝色线条**上方**。线条进入底部画布，从而在水平压缩时被切除。
+            topH = splitLineTopY;
+            btmSrcY = splitLineTopY;
+            btmH = h - splitLineTopY;
+        }
+
+        // 分解为上下两块画布
+        const topCanvas = document.createElement('canvas');
+        topCanvas.width = w; topCanvas.height = topH;
+        topCanvas.getContext('2d').drawImage(img, 0, 0, w, topH, 0, 0, w, topH);
+        
+        const btmCanvas = document.createElement('canvas');
+        btmCanvas.width = w; btmCanvas.height = btmH;
+        btmCanvas.getContext('2d').drawImage(img, 0, btmSrcY, w, btmH, 0, 0, w, btmH);
+
+        // --- 开始独立进行无损切片 ---
+        
+        // 1. 上半部分：正常折叠 Y轴 和 X轴 (阈值8)
+        let topProcessed = dropSlices(topCanvas, 'y', ySpace, 8);
+        
+        // ⭐ 极致收缩达成！
+        // 如果开关关（默认），上半部不包含蓝色线条，X轴横向间距将可以毫无阻力地收缩。
+        topProcessed = dropSlices(topProcessed, 'x', topXSpace, 8);
+
+        // 2. 下半部分(虚线框)：不压高度！只折叠 X轴。
+        // 如果开关关（默认），下半部包含蓝色线条，算法将无视它（阈值设为5，少于5个像素的线条会被无视）并将其压缩消除。
+        let btmProcessed = dropSlices(btmCanvas, 'x', btmXSpace, 5);
+
+        // --- 拼接 ---
+        const mergedW = Math.max(topProcessed.width, btmProcessed.width);
+        const mergedH = topProcessed.height + btmProcessed.height;
+        const mergedCanvas = document.createElement('canvas');
+        mergedCanvas.width = mergedW; mergedCanvas.height = mergedH;
+        const mergedCtx = mergedCanvas.getContext('2d');
+
+        // 智能提取背景色
+        const topBgColor = topCanvas.getContext('2d').getImageData(10, 10, 1, 1).data;
+        const btmBgColor = btmCanvas.getContext('2d').getImageData(10, btmCanvas.height-10, 1, 1).data;
+        
+        mergedCtx.fillStyle = `rgb(${topBgColor[0]}, ${topBgColor[1]}, ${topBgColor[2]})`;
+        mergedCtx.fillRect(0, 0, mergedW, topProcessed.height);
+        
+        mergedCtx.fillStyle = `rgb(${btmBgColor[0]}, ${btmBgColor[1]}, ${btmBgColor[2]})`;
+        mergedCtx.fillRect(0, topProcessed.height, mergedW, btmProcessed.height);
+
+        // 拼接
+        mergedCtx.drawImage(topProcessed, Math.floor((mergedW - topProcessed.width) / 2), 0);
+        mergedCtx.drawImage(btmProcessed, Math.floor((mergedW - btmProcessed.width) / 2), topProcessed.height);
+
+        // --- 处理比例 ---
+        if (ratioType === 'card') {
+            const targetRatio = 8.56 / 5.4;
+            const currentRatio = mergedW / mergedH;
+            let finalW = mergedW, finalH = mergedH;
+            if (currentRatio > targetRatio) finalH = Math.floor(mergedW / targetRatio);
+            else finalW = Math.floor(mergedH * targetRatio);
+            
+            const cardCanvas = document.createElement('canvas');
+            cardCanvas.width = finalW; cardCanvas.height = finalH;
+            const cardCtx = cardCanvas.getContext('2d');
+            cardCtx.fillStyle = `rgb(${topBgColor[0]}, ${topBgColor[1]}, ${topBgColor[2]})`; // 用浅蓝色填充整张卡片
+            cardCtx.fillRect(0, 0, finalW, finalH);
+            cardCtx.drawImage(mergedCanvas, Math.floor((finalW - mergedW) / 2), Math.floor((finalH - mergedH) / 2));
+            return cardCanvas.toDataURL('image/jpeg', 0.95);
+        }
+
+        return mergedCanvas.toDataURL('image/jpeg', 0.95);
+    }
+</script>
+
+</body>
+</html>
