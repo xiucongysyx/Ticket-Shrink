@@ -8,7 +8,7 @@
 [![Pure Frontend](https://img.shields.io/badge/Tech-Pure_HTML/JS-f39f37.svg)](#)
 [![Privacy First](https://img.shields.io/badge/Privacy-100%25_Local-4caf50.svg)](#)
 
-[在线体验 (GitHub Pages)](您的GitHub_Pages链接) · [报告 Bug](您的Issues链接) · [提出建议](您的Issues链接)
+[报告 Bug](https://github.com/xiucongysyx/Ticket-Shrink/issues) · [提出建议](https://github.com/xiucongysyx/Ticket-Shrink/issues)
 
 </div>
 
@@ -22,8 +22,8 @@
 
 ## ✨ 核心特性 (Features)
 
-- 🛡️ **绝对的隐私安全：** 纯本地浏览器 Canvas 运算，**无任何图片上传或服务器交互**，保护您的身份信息与出行隐私。
-- ✂️ **无损切片折叠 (Seam Carving)：** 摒弃粗暴的图像缩放。算法基于像素边缘探测，像折纸一样折叠空白区域，**100% 保证文字比例不失真、不被压扁**。
+- 🛡️ **绝对的隐私安全：** 纯本地浏览器 Canvas 运算，无任何图片上传或服务器交互，保护您的身份信息与出行隐私。
+- ✂️ **无损切片折叠 (Seam Carving)：** 摒弃粗暴的图像缩放。算法基于像素边缘探测，像折纸一样折叠空白区域，100% 保证文字比例不失真、不被压扁。
 - 🥞 **智能分层处理：** 将主体文字区与底部的“虚线说明框”剥离，支持分别独立控制 X 轴与 Y 轴的压缩率。
 - 📏 **精准卡片比例：** 一键自动补齐底色至 `8.56 : 5.4` 标准卡片比例，右键保存后即可直接按 100% 比例打印，告别手动裁切。
 - 🚀 **开箱即用：** 零依赖，单文件，双击 `index.html` 即可运行。
@@ -34,7 +34,7 @@
 
 | 处理前 (原始 A4 比例电子票) | 处理后 (标准卡片比例紧凑版) |
 | :---: | :---: |
-| <img src="assets/before-demo.jpg" width="400"> | <img src="assets/after-demo.jpg" width="400"> |
+| <img src="assets/before-demo.png" width="400"> | <img src="assets/after-demo.jpg" width="400"> |
 
 ## 🚀 快速开始 (Usage)
 
@@ -71,5 +71,5 @@
 
 ---
 <div align="center">
-Made with ❤️ by [您的名字/昵称]
+Made with ❤️ by [墨水章鱼]
 </div>
